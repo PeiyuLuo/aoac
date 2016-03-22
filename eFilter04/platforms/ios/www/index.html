@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Page Title</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="jquery.mobile-1.4.5.css" />
+    <style>
+    [data-role=page]{height: 100% !important; position:relative !important;}
+    [data-role=footer]{bottom:0; position:absolute !important; top: auto !important; width:100%;} 
+    .photoDisplay{
+      padding: -1em;
+    }
+    #overlay {
+       position: absolute;
+      }
+    </style>
+		<script src="cordova.js"></script>
+		<script src="jquery-2.2.0.js"></script>
+    
+
+<!-- face track script -->
+    <script src="ext_js/utils.js"></script>
+    <script src="ext_js/dat.gui.min.js"></script>
+    <script src="ext_js/jsfeat-min.js"></script>
+    <script src="ext_js/frontalface.js"></script>
+    <script src="ext_js/jsfeat_detect.js"></script>
+    <script src="ext_js/numeric-1.2.6.min.js"></script>
+    <script src="ext_js/mosse.js"></script>
+    <script src="ext_js/left_eye_filter.js"></script>
+    <script src="ext_js/right_eye_filter.js"></script>
+    <script src="ext_js/nose_filter.js"></script>
+    <script src="ext_js/Stats.js"></script>
+
+    <script src="ext_js/model_pca_20_svm.js"></script>
+    <script src="ext_js/model_pca_20_svm_emotionDetection.js"></script>
+
+    <script src="ext_js/emotion_classifier.js" type="text/javascript"></script>
+    <script src="ext_js/emotionmodel.js" type="text/javascript"></script>
+    
+    <script src="ext_js/clm.js"></script>
+
+    <script src="ext_js/svmfilter_webgl.js"></script>
+    <script src="ext_js/svmfilter_fft.js"></script>
+    <script src="ext_js/mossefilter.js"></script>
+    
+    <script src="ext_js/jquery.imgareaselect.pack.js"></script>
+<!-- end -->
+
+		<script>
+			// This is to get around a new security restriction in Chrome
+			$(document).bind('mobileinit',function(){
+				$.mobile.pushStateEnabled = false;
+			});
+
+      function startCamera() {
+    		// alert("deviceready");
+
+        /////Register a callback function that receives the original picture and the image captured from the preview box.
+        cordova.plugins.camerapreview.setOnPictureTakenHandler(function(result){
+            // document.getElementById('originalPicture').src = result[0]; //originalPicturePath;
+            document.getElementById('previewPicture').src = result[1];  //previewPicturePath;
+            
+            if (frontCamera == true){
+                // switchCamera();
+                ctx = document.getElementById('image').getContext("2d");
+                var imageP2 =  new Image();
+                // document.getElementById('p2img');
+                 imageP2.addEventListener('load',function(){
+                    cc.drawImage(imageP2,0,0,w,h); 
+                    cordova.plugins.camerapreview.stopCamera();   // close Camera
+                    $.mobile.changePage("#page4", { transition: "fade"});
+                    // animateClean();
+                },false);
+                imageP2.src= result[1];              
+              }
+              else if (frontCamera == false){
+                console.log('back');
+                ctx = document.getElementById('c5').getContext("2d");
+                var imageP3 = new Image();
+                imageP3.addEventListener('load',function(){
+                    console.log('draw03')
+                    ctx.drawImage(imageP3,0,0,w,h);
+                    rFilter(0.1);
+                },false);
+                imageP3.src = result[1];     
+              }
+      });
+        ////////
+
+        var tapEnabled = true; //enable tap take picture
+        var dragEnabled = true; //enable preview box drag across the screen
+        var toBack = false; //send preview box to the back of the webview
+        var rect = {x: 14, y: 34, width: 382, height:382};
+        cordova.plugins.camerapreview.startCamera(rect, "front", tapEnabled, dragEnabled, toBack);
+        
+        document.getElementById('takePictureButton').addEventListener('touchstart', 
+            function() {
+                cordova.plugins.camerapreview.takePicture({maxWidth:640, maxHeight:640});
+                // cordova.plugins.camerapreview.hide();
+                if (firstPhoto == true){
+                  $("#takePictureButton").text("Take Photo");
+                  firstPhoto = false;
+                }
+                else{
+                  cordova.plugins.camerapreview.hide();
+                }
+            }
+            ,false);        
+    }
+
+    function switchCamera(){
+        cordova.plugins.camerapreview.switchCamera();
+        // cordova.plugins.camerapreview.show();
+        frontCamera = false;
+    }
+
+    function retakePicture(){
+        cordova.plugins.camerapreview.startCamera(rect, "front", tapEnabled, dragEnabled, toBack);
+    }
+
+
+		</script>
+		<script src="jquery.mobile-1.4.5.js"></script>
+
+	</head>
+	<body>
+		<div data-role="page" id="page1">
+			<!-- <div data-role="header">Page 1 Header</div> -->
+			<div data-role="main" class="ui-content">
+         <a href="#page4" class="ui-btn">page4</a>           
+      <a href="#page3" data-transition="slidedown" style="position:absolute; top:50%; width:382px;">
+  			 <input type="button" id="startBtn" value="Start" onclick="startCamera()" style ="width:382;" >
+        </a>
+
+			</div>
+			<!-- <div data-role="footer">Page 1 Footer</div> -->
+		</div>
+        
+    <!-- page 3 -->
+
+        <div data-role="page" id="page3">
+            <!-- <div data-role="header"></div> -->
+            <div data-role="main" class="ui-content">
+
+                <p><img id="previewPicture" width="382" height="382"/></p>
+                <!-- <p><img id="originalPicture" width="200"/></p> -->
+
+
+                <!-- <input type="button" id="takePictureButton" value="Capture Face"> -->
+
+                <a data-role="button" id="takePictureButton">Capture Face</a>
+               
+                 <!-- <input type="button" value="Switch Camera" onclick="switchCamera()"> -->
+                <!-- <input type="button" value="Show Camera" onclick="retakePicture()"> -->
+                <!-- <input type="button" value="Close Camera" onclick="closeCamera()"> -->
+
+                  <!-- Page 1 Content<br/> -->
+                  <!-- <a href="#page4" class="ui-btn">Track Face Emotion</a> -->
+                  <!-- <a href="#page2" class="ui-btn">Filter Photo</a> -->
+                  <!-- <a href="#page3" class="ui-btn">Go to Page3</a> -->
+                  
+                   <!-- version 1.4 -->
+
+            </div>
+            <div data-role="footer">
+                <a href="#page1" class="ui-btn">Go Back</a> 
+                <a href="#page4" class="ui-btn">page4</a> 
+                <a href="#page5" class="ui-btn">page5</a> 
+            </div>
+      </div>
+
+    <!-- end page 3 -->
+
+    <!-- page 4 -->
+
+        <div data-role="page" id="page4">
+            <div data-role="header">Page 4 Header</div>
+            <div data-role="main" class="ui-content">
+              
+                   <canvas id="image" width="400" height="400"></canvas>
+                   <canvas id="overlay" width="400" height="400"></canvas>
+
+                   <input type="button" class="btn" value="draw image" onclick="drawEmotionImg()"></input>
+                   <input type="button" class="btn" value="Track emotions" onclick="animateClean()"></input>
+                    <p id="convergence"></p>
+                    <!-- <input type="button" class="btn" value="printEmotion" onclick="printEmotion()"></input> -->
+                    <div id="emotionText"></div>
+                    <p id="convergence"></p>
+                  
+            </div>
+            <div data-role="footer">
+                 <a href="#page1" class="ui-btn">Go Back</a> 
+                <a href="#page4" class="ui-btn">page4</a> 
+                <a href="#page5" class="ui-btn">page5</a> 
+            </div>
+
+      </div>
+
+    <!-- end page 4 -->
+
+    <!-- page 5 -->
+
+        <div data-role="page" id="page5">
+            <!-- <div data-role="header"></div> -->
+            <div data-role="main" class="ui-content">
+
+               <canvas id="c5" width="382px" height="382px" class="photoDisplay"></canvas>
+
+            </div>
+            <div data-role="footer">
+                <a href="#page1" class="ui-btn">Go Back</a> 
+                <a href="#page4" class="ui-btn">page4</a> 
+            </div>
+      </div>
+
+    <!-- end page 5 -->
+
+		<script src="js/camera.js"></script>
+
+
+	</body>
+</html>
